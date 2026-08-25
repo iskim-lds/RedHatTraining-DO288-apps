@@ -261,7 +261,7 @@
               "from": {
                 "kind": "ImageStreamTag",
                 "namespace": "openshift",
-                "name": "mysql:5.7"
+                "name": "mysql:8.0-el9"
               }
             }
           }
