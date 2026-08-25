@@ -280,7 +280,7 @@
     },
     {
       "name": "SOURCE_REPOSITORY_REF",
-      "value": "master"
+      "value": "main"
     },
     {
       "name": "CONTEXT_DIR",
