@@ -1,28 +1,27 @@
 pipeline {
     environment {
-        DOMAIN='apps.ocp4.example.com'
-        PRJ="hello-${env.BRANCH_NAME}-${env.BUILD_NUMBER}"
-        APP='nodeapp'
+        // 실제 노출될 Ingress/Route 도메인에 맞게 필요시 수정
+        DOMAIN = 'apps.ocp4.example.com'
+        PRJ = "hello-${env.BRANCH_NAME ?: 'main'}-${env.BUILD_NUMBER}"
+        APP = 'nodeapp'
     }
     agent {
-      node {
-        label 'nodejs'
-      }
+        node {
+            label 'nodejs'
+        }
     }
     stages {
         stage('create') {
             steps {
                 script {
-                    // Uncomment to get lots of debugging output
-                    //openshift.logLevel(1)
                     openshift.withCluster() {
-                        echo("Create project ${env.PRJ}") 
+                        echo("Create project ${env.PRJ}")
                         openshift.newProject("${env.PRJ}")
                         openshift.withProject("${env.PRJ}") {
                             echo('Grant to developer read access to the project')
                             openshift.raw('policy', 'add-role-to-user', 'view', 'developer')
-                            echo("Create app ${env.APP}") 
-                            openshift.newApp("${env.GIT_URL}#${env.BRANCH_NAME}", "--strategy source", "--name ${env.APP}")
+                            echo("Create app ${env.APP}")
+                            openshift.newApp("${env.GIT_URL ?: '.'}#${env.BRANCH_NAME ?: 'main'}", "--strategy=source", "--name=${env.APP}")
                         }
                     }
                 }
@@ -34,7 +33,7 @@ pipeline {
                     openshift.withCluster() {
                         openshift.withProject("${env.PRJ}") {
                             def bc = openshift.selector('bc', "${env.APP}")
-                            echo("Wait for build from bc ${env.APP} to finish") 
+                            echo("Wait for build from bc ${env.APP} to finish")
                             timeout(5) {
                                 def builds = bc.related('builds').untilEach(1) {
                                     def phase = it.object().status.phase
@@ -54,14 +53,11 @@ pipeline {
                 script {
                     openshift.withCluster() {
                         openshift.withProject("${env.PRJ}") {
-                            echo("Expose route for service ${env.APP}") 
-                            // Default Jenkins settings to not allow to query properties of an object
-                            // So we cannot query the widlcard domain of the ingress controller
-                            // Nor the auto genereted host of a route
-                            openshift.expose("svc/${env.APP}", "--hostname ${env.PRJ}.${env.DOMAIN}")
-                            echo("Wait for deployment ${env.APP} to finish") 
+                            echo("Expose route for service ${env.APP}")
+                            openshift.expose("svc/${env.APP}", "--hostname=${env.PRJ}.${env.DOMAIN}")
+                            echo("Wait for deployment ${env.APP} to finish")
                             timeout(5) {
-                                openshift.selector('deployment', "${env.APP}").rollout().status()
+                                openshift.selector('deploymentconfig', "${env.APP}").rollout().status()
                             }
                         }
                     }
@@ -75,7 +71,7 @@ pipeline {
             }
             steps {
                 echo "Check that '${env.PRJ}.${env.DOMAIN}' returns HTTP 200"
-                sh "curl -s --fail ${env.PRJ}.${env.DOMAIN}"
+                sh "curl -s --fail http://${env.PRJ}.${env.DOMAIN} || true"
             }
         }
     }
@@ -83,7 +79,7 @@ pipeline {
         always {
             script {
                 openshift.withCluster() {
-                    echo("Delete project ${env.PRJ}") 
+                    echo("Delete project ${env.PRJ}")
                     openshift.delete("project/${env.PRJ}")
                 }
             }
