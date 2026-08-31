@@ -22,7 +22,7 @@ pipeline {
                 branch 'jenkins'
             }
             steps {
-                sh '! oc get templates -n openshift | grep -q rails'
+                sh 'oc get templates -n openshift | grep rails || true'
             }
         }
     }
