@@ -1,0 +1,12 @@
+apiVersion: samples.operator.openshift.io/v1
+kind: Config
+metadata:
+  name: cluster
+spec:
+  architectures:
+  - x86_64
+  managementState: Managed
+  samplesRegistry: registry.ocp4.example.com:8443
+#  skippedTemplates:
+#  - rails-pgsql-persistent
+#  - rails-postgresql-example

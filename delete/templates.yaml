@@ -1,0 +1,10 @@
+apiVersion: template.openshift.io/v1
+kind: Template
+metadata:
+  name: rails-pgsql-persistent
+  namespace: openshift
+objects:
+- apiVersion: v1
+  kind: ImageStream
+  metadata:
+    name: rails-pgsql-persistent-example

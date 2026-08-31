@@ -1,0 +1,29 @@
+pipeline {
+    agent {
+        node {
+            label 'nodejs'
+        }
+    }
+    triggers {
+        pollSCM('H/5 * * * *')
+    }
+    stages {
+        stage('Apply resources') {
+            when {
+                branch 'jenkins'
+            }
+            steps {
+                sh 'oc apply -k samples'
+                sh 'oc delete -f delete --wait || true'
+            }
+        }
+        stage('Verify deleted templates') {
+            when {
+                branch 'jenkins'
+            }
+            steps {
+                sh '! oc get templates -n openshift | grep -q rails'
+            }
+        }
+    }
+}
